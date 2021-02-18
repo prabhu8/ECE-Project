@@ -36,7 +36,7 @@ class UpdateAnnealingParameter(Callback):
 
 def tf_log10(x):
     numerator = tf.math.log(x)
-    denominator = tf.log(tf.constant(10, dtype=numerator.dtype))
+    denominator = tf.math.log(tf.constant(10, dtype=numerator.dtype))
     return numerator / denominator
 
 
