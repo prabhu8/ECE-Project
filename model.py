@@ -30,11 +30,12 @@ class UpdateAnnealingParameter(Callback):
         K.set_value(self.gamma, new_gamma)
 
         if self.verbose > 0:
-            print('\nEpoch %05d: UpdateAnnealingParameter reducing gamma to %s.' % (epoch + 1, new_gamma))
+            print('\nEpoch %05d: UpdateAnnealingParameter reducing gamma to %s.' % (
+                epoch + 1, new_gamma))
 
 
 def tf_log10(x):
-    numerator = tf.log(x)
+    numerator = tf.math.log(x)
     denominator = tf.log(tf.constant(10, dtype=numerator.dtype))
     return numerator / denominator
 
@@ -57,27 +58,32 @@ def get_model(model_name="srresnet"):
 # SRResNet
 def get_srresnet_model(input_channel_num=3, feature_dim=64, resunit_num=16):
     def _residual_block(inputs):
-        x = Conv2D(feature_dim, (3, 3), padding="same", kernel_initializer="he_normal")(inputs)
+        x = Conv2D(feature_dim, (3, 3), padding="same",
+                   kernel_initializer="he_normal")(inputs)
         x = BatchNormalization()(x)
         x = PReLU(shared_axes=[1, 2])(x)
-        x = Conv2D(feature_dim, (3, 3), padding="same", kernel_initializer="he_normal")(x)
+        x = Conv2D(feature_dim, (3, 3), padding="same",
+                   kernel_initializer="he_normal")(x)
         x = BatchNormalization()(x)
         m = Add()([x, inputs])
 
         return m
 
     inputs = Input(shape=(None, None, input_channel_num))
-    x = Conv2D(feature_dim, (3, 3), padding="same", kernel_initializer="he_normal")(inputs)
+    x = Conv2D(feature_dim, (3, 3), padding="same",
+               kernel_initializer="he_normal")(inputs)
     x = PReLU(shared_axes=[1, 2])(x)
     x0 = x
 
     for i in range(resunit_num):
         x = _residual_block(x)
 
-    x = Conv2D(feature_dim, (3, 3), padding="same", kernel_initializer="he_normal")(x)
+    x = Conv2D(feature_dim, (3, 3), padding="same",
+               kernel_initializer="he_normal")(x)
     x = BatchNormalization()(x)
     x = Add()([x, x0])
-    x = Conv2D(input_channel_num, (3, 3), padding="same", kernel_initializer="he_normal")(x)
+    x = Conv2D(input_channel_num, (3, 3), padding="same",
+               kernel_initializer="he_normal")(x)
     model = Model(inputs=inputs, outputs=x)
 
     return model
@@ -85,7 +91,7 @@ def get_srresnet_model(input_channel_num=3, feature_dim=64, resunit_num=16):
 
 # UNet: code from https://github.com/pietz/unet-keras
 def get_unet_model(input_channel_num=3, out_ch=3, start_ch=64, depth=4, inc_rate=2., activation='relu',
-         dropout=0.5, batchnorm=False, maxpool=True, upconv=True, residual=False):
+                   dropout=0.5, batchnorm=False, maxpool=True, upconv=True, residual=False):
     def _conv_block(m, dim, acti, bn, res, do=0):
         n = Conv2D(dim, 3, activation=acti, padding='same')(m)
         n = BatchNormalization()(n) if bn else n
@@ -99,12 +105,14 @@ def get_unet_model(input_channel_num=3, out_ch=3, start_ch=64, depth=4, inc_rate
         if depth > 0:
             n = _conv_block(m, dim, acti, bn, res)
             m = MaxPooling2D()(n) if mp else Conv2D(dim, 3, strides=2, padding='same')(n)
-            m = _level_block(m, int(inc * dim), depth - 1, inc, acti, do, bn, mp, up, res)
+            m = _level_block(m, int(inc * dim), depth - 1,
+                             inc, acti, do, bn, mp, up, res)
             if up:
                 m = UpSampling2D()(m)
                 m = Conv2D(dim, 2, activation=acti, padding='same')(m)
             else:
-                m = Conv2DTranspose(dim, 3, strides=2, activation=acti, padding='same')(m)
+                m = Conv2DTranspose(dim, 3, strides=2,
+                                    activation=acti, padding='same')(m)
             n = Concatenate()([n, m])
             m = _conv_block(n, dim, acti, bn, res)
         else:
@@ -113,7 +121,8 @@ def get_unet_model(input_channel_num=3, out_ch=3, start_ch=64, depth=4, inc_rate
         return m
 
     i = Input(shape=(None, None, input_channel_num))
-    o = _level_block(i, start_ch, depth, inc_rate, activation, dropout, batchnorm, maxpool, upconv, residual)
+    o = _level_block(i, start_ch, depth, inc_rate, activation,
+                     dropout, batchnorm, maxpool, upconv, residual)
     o = Conv2D(out_ch, 1)(o)
     model = Model(inputs=i, outputs=o)
 
